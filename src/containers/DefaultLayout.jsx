@@ -3,7 +3,6 @@ import { Route, Switch, Redirect, withRouter } from 'react-router-dom'
 import { Layout, BackTop, message } from 'antd'
 import echarts from 'echarts/lib/echarts'
 import routes from '@/routes'
-import menus from '@/routes/menus'
 import avatar from '@/assets/images/user.png'
 import '@/style/layout.scss'
 
@@ -41,7 +40,7 @@ const DefaultLayout = props => {
             props.history.push('/login')
             return []
         } else {
-            return getMenu(menus)
+            return getMenu(routes)
         }
     })
 
@@ -79,8 +78,18 @@ const DefaultLayout = props => {
             timer && clearTimeout(timer)
         }
     })
+    const routers = []
+    const getRouters = (menu) => {
+        menu.forEach(item => {
+            if (item.component) {
+                routers.push(item)
+            } else {
+                getRouters(item.subs)
+            }
+        })
+    }
+    getRouters(menu)
 
-    console.log(menus)
     return (
         <Layout className='app'>
             <BackTop />
@@ -89,21 +98,13 @@ const DefaultLayout = props => {
                 <AppHeader menuToggle={state.menuToggle} menuClick={menuClick} avatar={avatar} loginOut={loginOut} />
                 <Content className='content'>
                     <Switch>
-                        {routes.map(item => {
+                        {routers.map(item => {
                             return (
                                 <Route
-                                    key={item.path}
-                                    path={item.path}
-                                    render={props =>
-                                        !auth ? (
-                                            <item.component {...props} />
-                                        ) : item.auth && item.auth.indexOf(auth) !== -1 ? (
-                                            <item.component {...props} />
-                                        ) : (
-                                            // 这里也可以跳转到 403 页面
-                                            <Redirect to='/404' {...props} />
-                                        )
-                                    }></Route>
+                                    key={item.key}
+                                    path={item.key}
+                                    render={props => <item.component {...props} />}>
+                                </Route>
                             )
                         })}
                         <Redirect to='/404' />
